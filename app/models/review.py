@@ -1,6 +1,7 @@
-from sqlalchemy import Column, Integer, String, Date, DateTime
+from sqlalchemy import Column, Integer, String, Date, DateTime, Enum
 from sqlalchemy.sql import func
 from app.database import Base
+from app.schemas.review import SentimentsEnum
 
 
 class Review(Base):
@@ -39,7 +40,11 @@ class Review(Base):
         onupdate=func.now()
     )
     sentiment = Column(
-        # Enum,
+        Enum(
+            SentimentsEnum,
+            name="sentiments_enum",
+            create_type=True
+        ),
         nullable=False,
         index=True
     )
