@@ -111,7 +111,8 @@ class SentimentClassifier:
         return any(word in text for word in contradiction_words)
 
     def matches_neutral_pattern(self, text: str) -> bool:
-        """Verifica se o texto corresponde a padrões específicos de neutralidade"""
+        """Verifica se o texto corresponde a padrões específicos de
+        neutralidade"""
         text = unidecode(text.lower())
         for pattern in self.neutral_patterns:
             if re.search(pattern, text):
@@ -119,13 +120,28 @@ class SentimentClassifier:
         return False
 
     def analyze_sentiment_strength(self, text: str) -> Dict[str, float]:
-        processed_text = self.preprocess_text(text)
         original_text = text
 
-        very_pos_count = self.count_matches(original_text, self.very_positive)
-        very_neg_count = self.count_matches(original_text, self.very_negative)
-        neutral_count = self.count_matches(original_text, self.neutral_indicators)
-        weakening_count = self.count_matches(original_text, self.weakening_words)
+        very_pos_count = self.count_matches(
+            original_text,
+            self.very_positive
+        )
+
+        very_neg_count = self.count_matches(
+            original_text,
+            self.very_negative
+        )
+
+        neutral_count = self.count_matches(
+            original_text,
+            self.neutral_indicators
+        )
+
+        weakening_count = self.count_matches(
+            original_text,
+            self.weakening_words
+            )
+
         has_contradiction = self.has_contradiction(original_text)
         matches_neutral_pattern = self.matches_neutral_pattern(original_text)
 
@@ -157,7 +173,7 @@ class SentimentClassifier:
             return SentimentsEnum.NEGATIVE.value
 
         # Neutro forte por ambivalência clara
-        if analysis['neutral_indicators'] >= 3 or (analysis['has_contradiction'] and analysis['neutral_indicators'] >= 2):
+        if analysis['neutral_indicators'] >= 3 or (analysis['has_contradiction'] and analysis['neutral_indicators'] >= 2):  # noqa:E501
             return SentimentsEnum.NEUTRAL.value
 
         # Neutro por conteúdo claramente misto
@@ -176,11 +192,11 @@ class SentimentClassifier:
             return SentimentsEnum.POSITIVE.value
 
         # Neutro se há contradição com baixa confiança do modelo
-        if analysis['has_contradiction'] and analysis['flair_confidence'] < 0.8:
+        if analysis['has_contradiction'] and analysis['flair_confidence'] < 0.8:  # noqa:E501
             return SentimentsEnum.NEUTRAL.value
 
         # Alta confiança do modelo sem contradições
-        if analysis['flair_confidence'] >= 0.9 and not analysis['has_contradiction']:
+        if analysis['flair_confidence'] >= 0.9 and not analysis['has_contradiction']:  # noqa:E501
             return (
                 SentimentsEnum.POSITIVE.value
                 if analysis['flair_label'] == "positive"
@@ -188,14 +204,14 @@ class SentimentClassifier:
             )
 
         # Heurísticas claras sem ambiguidade
-        if analysis['very_positive'] >= 2 and analysis['very_negative'] == 0 and not analysis['has_contradiction']:
+        if analysis['very_positive'] >= 2 and analysis['very_negative'] == 0 and not analysis['has_contradiction']:  # noqa:E501
             return SentimentsEnum.POSITIVE.value
 
-        if analysis['very_negative'] >= 1 and analysis['very_positive'] == 0 and not analysis['has_contradiction']:
+        if analysis['very_negative'] >= 1 and analysis['very_positive'] == 0 and not analysis['has_contradiction']:  # noqa:E501
             return SentimentsEnum.NEGATIVE.value
 
         # Positivo claro com uma palavra muito positiva e alta confiança
-        if analysis['very_positive'] >= 1 and analysis['very_negative'] == 0 and analysis['flair_confidence'] >= 0.85 and not analysis['has_contradiction']:
+        if analysis['very_positive'] >= 1 and analysis['very_negative'] == 0 and analysis['flair_confidence'] >= 0.85 and not analysis['has_contradiction']:  # noqa:E501
             return SentimentsEnum.POSITIVE.value
 
         # Baixa confiança ou ambiguidade => neutro
