@@ -1,6 +1,7 @@
 from flair.models import TextClassifier
 from flair.data import Sentence
 from typing import Dict, List
+from app.schemas.review import SentimentsEnum
 
 
 class SentimentClassifier:
@@ -136,36 +137,36 @@ class SentimentClassifier:
         analysis = self.analyze_sentiment_strength(text)
 
         if analysis['neutral_indicators'] >= 2 or analysis['has_contradiction']:  # noqa: E501
-            return "neutral"
+            return SentimentsEnum.NEUTRAL.value
 
         if analysis['weakening_words'] >= 2:
-            return "neutral"
+            return SentimentsEnum.NEUTRAL.value
 
         if analysis['very_positive'] >= 1 and analysis['very_negative'] >= 1:
-            return "neutral"
+            return SentimentsEnum.NEUTRAL.value
 
         if analysis['very_negative'] >= 2:
-            return "negative"
+            return SentimentsEnum.NEGATIVE.value
 
         if analysis['very_positive'] >= 2:
-            return "positive"
+            return SentimentsEnum.POSITIVE.value
 
         if analysis['neutral_indicators'] >= 1 and analysis['flair_confidence'] < 0.8:  # noqa: E501
-            return "neutral"
+            return SentimentsEnum.NEUTRAL.value
 
         if analysis['flair_confidence'] >= 0.9:
-            return "positive" if analysis['flair_label'] == "positive" else "negativa"  # noqa: E501
+            return SentimentsEnum.POSITIVE.value if analysis['flair_label'] == "positive" else SentimentsEnum.NEGATIVE.value  # noqa: E501
 
         if analysis['very_positive'] >= 1 and analysis['very_negative'] == 0:
-            return "positive"
+            return SentimentsEnum.POSITIVE.value
 
         if analysis['very_negative'] >= 1 and analysis['very_positive'] == 0:
-            return "negative"
+            return SentimentsEnum.NEGATIVE.value
 
         if analysis['flair_confidence'] < 0.7:
-            return "neutral"
+            return SentimentsEnum.NEUTRAL.value
 
-        return "positiva" if analysis['flair_label'] == "positive" else "negativa"  # noqa: E501
+        return SentimentsEnum.POSITIVE.value if analysis['flair_label'] == "positive" else SentimentsEnum.NEGATIVE.value  # noqa: E501
 
 
 # Instância global para uso na API
