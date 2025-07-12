@@ -51,7 +51,7 @@ class ReviewBase(BaseModel):
         min_length=1,
         max_length=255,
         description="Nome do cliente autor da avaliação",
-        example="Miriam Duarte"
+        json_schema_extra={"example": "Miriam Kunitake"}
     )
 
     review_text: str = Field(
@@ -59,13 +59,13 @@ class ReviewBase(BaseModel):
         min_length=1,
         max_length=5000,
         description="Texto completo da avaliação do cliente",
-        example="O atendimento foi rápido, mas poderia ser mais detalhado."
+        json_schema_extra={"example": "O atendimento foi rápido."}
     )
 
     evaluation_date: date = Field(
         ...,
         description="Data em que a avaliação feita",
-        example="2025-07-17"
+        json_schema_extra={"example": "2025-07-17"}
     )
 
     @field_validator("customer_name")
@@ -156,23 +156,27 @@ class ReviewResponse(BaseModel):
         sentiment (SentimentsEnum): Sentimento classificado da avaliação.
     """
 
-    id: int = Field(..., example=1)
+    id: int = Field(
+        ...,
+        json_schema_extra={"example": 1}
+
+    )
     customer_name: str = Field(
         ...,
-        example="Ana Silva"
+        json_schema_extra={"example": "Mariana Miranda"}
     )
 
     review_text: str = Field(
         ...,
-        example="O atendimento foi excelente e resolveu meu problema."
+        json_schema_extra={"example": "O atendimento resolveu meu problema."}
     )
 
     evaluation_date: date = Field(
         ...,
-        example="2025-07-10"
+        json_schema_extra={"example": "2025-07-10"}
     )
 
     sentiment: SentimentsEnum = Field(
         ...,
-        example="positive"
+        json_schema_extra={"example": "Positive"}
     )
