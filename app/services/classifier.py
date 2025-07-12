@@ -136,34 +136,34 @@ class SentimentClassifier:
         analysis = self.analyze_sentiment_strength(text)
 
         if analysis['neutral_indicators'] >= 2 or analysis['has_contradiction']:  # noqa: E501
-            return "neutra"
+            return "neutral"
 
         if analysis['weakening_words'] >= 2:
-            return "neutra"
+            return "neutral"
 
         if analysis['very_positive'] >= 1 and analysis['very_negative'] >= 1:
-            return "neutra"
+            return "neutral"
 
         if analysis['very_negative'] >= 2:
-            return "negativa"
+            return "negative"
 
         if analysis['very_positive'] >= 2:
-            return "positiva"
+            return "positive"
 
         if analysis['neutral_indicators'] >= 1 and analysis['flair_confidence'] < 0.8:  # noqa: E501
-            return "neutra"
+            return "neutral"
 
         if analysis['flair_confidence'] >= 0.9:
-            return "positiva" if analysis['flair_label'] == "positive" else "negativa"  # noqa: E501
+            return "positive" if analysis['flair_label'] == "positive" else "negativa"  # noqa: E501
 
         if analysis['very_positive'] >= 1 and analysis['very_negative'] == 0:
-            return "positiva"
+            return "positive"
 
         if analysis['very_negative'] >= 1 and analysis['very_positive'] == 0:
-            return "negativa"
+            return "negative"
 
         if analysis['flair_confidence'] < 0.7:
-            return "neutra"
+            return "neutral"
 
         return "positiva" if analysis['flair_label'] == "positive" else "negativa"  # noqa: E501
 
