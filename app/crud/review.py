@@ -5,7 +5,7 @@ from datetime import date
 
 from app.models.review import Review
 from app.schemas.review import ReviewBase, SentimentsEnum
-# import do classificador
+from app.services.classifier import classify_sentiment
 
 
 def create_review(
@@ -22,7 +22,7 @@ def create_review(
     Returns:
         Review: Objeto da avaliação criada.
     """
-    sentiment = "sentimento classificado"  # <----- SUBSTITUIR
+    sentiment = classify_sentiment(review_data.review_text)
 
     review = Review(
         customer_name=review_data.customer_name,
