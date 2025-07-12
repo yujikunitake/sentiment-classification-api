@@ -71,7 +71,19 @@ class ReviewBase(BaseModel):
     @field_validator("customer_name")
     @classmethod
     def validate_customer_name(cls, v: str) -> str:
-        """Valida e limpa o nome do cliente."""
+        """
+        Valida o campo customer_name, garantindo que não esteja vazio ou só 
+        com espaços.
+
+        Args:
+            v (str): Nome do cliente.
+
+        Returns:
+            str: Nome do cliente validado.
+
+        Raises:
+            ValueError: Se o nome estiver vazio ou contiver apenas espaços.
+        """
         if not v.strip():
             raise ValueError("Nome do cliente não pode estar vazio")
         return v.strip()
@@ -79,7 +91,19 @@ class ReviewBase(BaseModel):
     @field_validator("review_text")
     @classmethod
     def validate_review_text(cls, v: str) -> str:
-        """Valida e limpa o texto da avaliação."""
+        """
+        Valida o campo review_text, garantindo que não esteja vazio ou só
+        com espaços.
+
+        Args:
+            v (str): Texto da avaliação.
+
+        Returns:
+            str: Texto da avaliação validado.
+
+        Raises:
+            ValueError: Se o texto estiver vazio ou contiver apenas espaços.
+        """
         if not v.strip():
             raise ValueError("Texto da avaliação não pode estar vazio")
         return v.strip()
@@ -87,7 +111,18 @@ class ReviewBase(BaseModel):
     @field_validator("evaluation_date")
     @classmethod
     def validate_evaluation_date(cls, v: date) -> date:
-        """Garante que a data da avaliação não seja futura."""
+        """
+        Valida a data da avaliação, garantindo que não seja uma data futura.
+
+        Args:
+            v (date): Data da avaliação.
+
+        Returns:
+            date: Data validada.
+
+        Raises:
+            ValueError: Se a data estiver no futuro.
+        """
         if v > date.today():
             raise ValueError("Data da avaliação não pode ser futura")
         return v
