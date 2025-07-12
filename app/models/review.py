@@ -18,7 +18,7 @@ class Review(Base):
             index=True
         )
     review_text = Column(
-            Date,
+            String(5000),
             nullable=False,
             index=True
         )
