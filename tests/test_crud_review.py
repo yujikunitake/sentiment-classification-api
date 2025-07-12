@@ -9,124 +9,138 @@ import app.crud.review as crud
 
 @pytest.fixture
 def fake_review_data():
+    """Retorna um ReviewBase válido para testes."""
     return ReviewBase(
         customer_name="Teste Cliente",
         review_text="Texto de teste para avaliação.",
-        evaluation_date=date(2024, 8, 1)
+        evaluation_date=date(2024, 8, 1),
     )
 
 
-def test_create_review(fake_review_data):
+@pytest.fixture
+def mock_db():
+    """Retorna uma sessão de banco mockada com métodos básicos."""
     db = MagicMock()
     db.add = MagicMock()
     db.commit = MagicMock()
     db.refresh = MagicMock()
-
-    # Mockar classify_sentiment para retornar um sentimento fixo
-    crud.classify_sentiment = MagicMock(
-        return_value=SentimentsEnum.POSITIVE.value
-    )
-
-    review = crud.create_review(db, fake_review_data)
-
-    # Validar se a função classify_sentiment foi chamada
-    crud.classify_sentiment.assert_called_once_with(
-        fake_review_data.review_text
-    )
-
-    # Verifica se os métodos do db foram chamados
-    db.add.assert_called_once()
-    db.commit.assert_called_once()
-    db.refresh.assert_called_once_with(review)
-
-    # Verifica se o objeto retornado tem o sentimento mockado
-    assert review.sentiment == SentimentsEnum.POSITIVE.value
-    assert review.customer_name == fake_review_data.customer_name
-    assert review.review_text == fake_review_data.review_text
-    assert review.evaluation_date == fake_review_data.evaluation_date
+    db.query = MagicMock()
+    return db
 
 
-def test_get_reviews():
-    db = MagicMock()
+class TestCRUDReview:
+    """Testes para as operações CRUD de avaliações."""
 
-    # Simula query retornando uma lista de Reviews
-    fake_reviews = [
-        Review(
+    def test_create_review_success(self, mock_db, fake_review_data):
+        """Testa criação correta de avaliação com sentimento mockado."""
+        crud.classify_sentiment = MagicMock(return_value=SentimentsEnum.POSITIVE.value)  # noqa: E501
+
+        review = crud.create_review(mock_db, fake_review_data)
+
+        crud.classify_sentiment.assert_called_once_with(fake_review_data.review_text)  # noqa: E501
+        mock_db.add.assert_called_once_with(review)
+        mock_db.commit.assert_called_once()
+        mock_db.refresh.assert_called_once_with(review)
+        assert review.sentiment == SentimentsEnum.POSITIVE.value
+        assert review.customer_name == fake_review_data.customer_name
+
+    def test_create_review_invalid_sentiment_raises(self, mock_db, fake_review_data):  # noqa: E501
+        """Testa erro ao classificar sentimento (simulado)."""
+        crud.classify_sentiment = MagicMock(side_effect=ValueError("Erro na classificação"))  # noqa: E501
+
+        with pytest.raises(ValueError):
+            crud.create_review(mock_db, fake_review_data)
+
+    def test_get_reviews_no_filters(self, mock_db):
+        """Testa obtenção de todas avaliações sem filtro."""
+        fake_reviews = [
+            Review(
+                id=1,
+                customer_name="Cliente1",
+                review_text="bom",
+                evaluation_date=date(2024, 7, 1),
+                sentiment=SentimentsEnum.POSITIVE.value,
+            )
+        ]
+        query_mock = MagicMock()
+        query_mock.filter.return_value = query_mock
+        query_mock.order_by.return_value.all.return_value = fake_reviews
+        mock_db.query.return_value = query_mock
+
+        results = crud.get_reviews(mock_db)
+        assert results == fake_reviews
+
+    def test_get_reviews_with_filters(self, mock_db):
+        """Testa obtenção de avaliações com filtro de datas."""
+        fake_reviews = []
+        query_mock = MagicMock()
+        query_mock.filter.return_value = query_mock
+        query_mock.order_by.return_value.all.return_value = fake_reviews
+        mock_db.query.return_value = query_mock
+
+        start = date(2024, 1, 1)
+        end = date(2024, 12, 31)
+        results = crud.get_reviews(mock_db, start_date=start, end_date=end)
+        assert results == fake_reviews
+        # Verifica se filtros foram aplicados
+        assert query_mock.filter.call_count >= 2
+
+    def test_get_review_by_id_found(self, mock_db):
+        """Testa busca de avaliação existente por ID."""
+        fake_review = Review(
             id=1,
             customer_name="Cliente1",
             review_text="bom",
             evaluation_date=date(2024, 7, 1),
-            sentiment=SentimentsEnum.POSITIVE.value
-        ),
-        Review(
-            id=2,
-            customer_name="Cliente2",
-            review_text="ruim",
-            evaluation_date=date(2024, 7, 2),
-            sentiment=SentimentsEnum.NEGATIVE.value
-        ),
-    ]
+            sentiment=SentimentsEnum.POSITIVE.value,
+        )
+        query_mock = MagicMock()
+        query_mock.filter.return_value.first.return_value = fake_review
+        mock_db.query.return_value = query_mock
 
-    query_mock = MagicMock()
-    query_mock.filter.return_value = query_mock
-    query_mock.order_by.return_value.all.return_value = fake_reviews
-    db.query.return_value = query_mock
+        review = crud.get_review_by_id(mock_db, 1)
+        assert review == fake_review
 
-    # Testa filtro sem datas
-    results = crud.get_reviews(db)
-    assert results == fake_reviews
+    def test_get_review_by_id_not_found(self, mock_db):
+        """Testa busca de avaliação inexistente por ID."""
+        query_mock = MagicMock()
+        query_mock.filter.return_value.first.return_value = None
+        mock_db.query.return_value = query_mock
 
-    # Testa filtro com start_date
-    results = crud.get_reviews(db, start_date=date(2024, 7, 1))
-    assert db.query.call_count >= 1
-    query_mock.filter.assert_called()
+        review = crud.get_review_by_id(mock_db, 999)
+        assert review is None
 
-    # Testa filtro com end_date
-    results = crud.get_reviews(db, end_date=date(2024, 7, 2))
-    assert results == fake_reviews
+    def test_get_review_report(self, mock_db):
+        """Testa geração do relatório de sentimentos."""
+        results_from_db = [
+            (SentimentsEnum.POSITIVE, 10),
+            (SentimentsEnum.NEUTRAL, 5),
+            (SentimentsEnum.NEGATIVE, 3),
+        ]
 
+        query_mock = MagicMock()
+        query_mock.filter.return_value.group_by.return_value = results_from_db
+        mock_db.query.return_value = query_mock
 
-def test_get_review_by_id():
-    db = MagicMock()
-    fake_review = Review(
-        id=1,
-        customer_name="Cliente1",
-        review_text="bom",
-        evaluation_date=date(2024, 7, 1),
-        sentiment=SentimentsEnum.POSITIVE.value
-    )
-    query_mock = MagicMock()
-    query_mock.filter.return_value.first.return_value = fake_review
-    db.query.return_value = query_mock
+        report = crud.get_review_report(mock_db, date(2024, 1, 1), date(2024, 12, 31))  # noqa: E501
 
-    review = crud.get_review_by_id(db, review_id=1)
-    db.query.assert_called_once()
-    query_mock.filter.assert_called_once()
-    assert review == fake_review
+        expected = {
+            SentimentsEnum.POSITIVE.value: 10,
+            SentimentsEnum.NEUTRAL.value: 5,
+            SentimentsEnum.NEGATIVE.value: 3,
+        }
+        assert report == expected
 
+    def test_get_review_report_empty(self, mock_db):
+        """Testa relatório vazio quando não há avaliações."""
+        query_mock = MagicMock()
+        query_mock.filter.return_value.group_by.return_value = []
+        mock_db.query.return_value = query_mock
 
-def test_get_review_report():
-    db = MagicMock()
-
-    # Simula resultados de consulta
-    results_from_db = [
-        (SentimentsEnum.POSITIVE, 5),
-        (SentimentsEnum.NEUTRAL, 3),
-        (SentimentsEnum.NEGATIVE, 2),
-    ]
-
-    query_mock = MagicMock()
-    query_mock.filter.return_value.group_by.return_value = results_from_db
-    db.query.return_value = query_mock
-
-    report = crud.get_review_report(
-        db,
-        start_date=date(2024, 7, 1),
-        end_date=date(2024, 7, 31)
-    )
-
-    assert report == {
-        SentimentsEnum.POSITIVE.value: 5,
-        SentimentsEnum.NEUTRAL.value: 3,
-        SentimentsEnum.NEGATIVE.value: 2
-    }
+        report = crud.get_review_report(mock_db, date(2024, 1, 1), date(2024, 12, 31))  # noqa: E501
+        expected = {
+            SentimentsEnum.POSITIVE.value: 0,
+            SentimentsEnum.NEUTRAL.value: 0,
+            SentimentsEnum.NEGATIVE.value: 0,
+        }
+        assert report == expected
