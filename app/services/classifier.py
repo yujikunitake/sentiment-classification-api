@@ -1,20 +1,21 @@
-from flair.models import TextClassifier
-from flair.data import Sentence
-from typing import Dict, List
-from app.schemas.review import SentimentsEnum
-import spacy
-from unidecode import unidecode
+"""Módulo para classificação de sentimentos com modelo Flair e heurísticas."""
+
 import re
+from typing import Dict, List
+
+import spacy
+from flair.data import Sentence
+from flair.models import TextClassifier
+from unidecode import unidecode
+
+from app.schemas.review import SentimentsEnum
 
 
 class SentimentClassifier:
-    """
-    Classificador de sentimentos com modelo Flair e heurísticas específicas
-    para suporte técnico em português.
-    """
+    """Classificador de sentimentos com regras específicas para suporte B2B."""
 
     def __init__(self):
-        self.classifier = TextClassifier.load('sentiment')
+        self.classifier = TextClassifier.load("sentiment")
         self.nlp = spacy.load("pt_core_news_sm", disable=["ner", "parser"])
 
         self.very_positive = [
@@ -42,16 +43,17 @@ class SentimentClassifier:
         ]
 
         self.neutral_indicators = [
-            "mas", "porém", "contudo", "entretanto", "no entanto", "apesar de",
-            "embora", "mesmo assim", "ainda assim", "por outro lado",
-            "ao mesmo tempo", "educado mas", "respeitoso mas", "tentou mas",
-            "esforço mas", "infelizmente não", "não era clara", "mediana",
-            "poderia ser", "esperava mais", "não tão eficiente",
-            "agradeço pelo esforço", "sem solução definitiva",
-            "meio incompleta", "pela metade", "mais ou menos", "ok mas",
-            "demorou um pouco", "não muito", "razoável", "aceitável",
-            "satisfatória", "poderia ser mais", "resultado final me deixou",
-            "esperava mais", "espero que melhorem", "funcionado bem",
+            "mas", "porém", "contudo", "entretanto", "no entanto",
+            "apesar de", "embora", "mesmo assim", "ainda assim",
+            "por outro lado", "ao mesmo tempo", "educado mas",
+            "respeitoso mas", "tentou mas", "esforço mas",
+            "infelizmente não", "não era clara", "mediana", "poderia ser",
+            "esperava mais", "não tão eficiente", "agradeço pelo esforço",
+            "sem solução definitiva", "meio incompleta", "pela metade",
+            "mais ou menos", "ok mas", "demorou um pouco", "não muito",
+            "razoável", "aceitável", "satisfatória", "poderia ser mais",
+            "resultado final me deixou", "esperava mais",
+            "espero que melhorem", "funcionado bem",
             "não conseguiu solucionar", "tentou várias", "ao final",
             "agradeço pelo esforço", "infelizmente não conseguiu"
         ]
@@ -67,7 +69,6 @@ class SentimentClassifier:
             "sequer", "infelizmente"
         ]
 
-        # Padrões específicos para neutralidade
         self.neutral_patterns = [
             r"educado.*mas.*não conseguiu",
             r"respeitoso.*mas.*infelizmente",
@@ -79,6 +80,7 @@ class SentimentClassifier:
         ]
 
     def preprocess_text(self, text: str) -> str:
+        """Pré-processa o texto aplicando normalização e lematização."""
         text = unidecode(text.lower())
         doc = self.nlp(text)
         tokens = [
@@ -88,140 +90,111 @@ class SentimentClassifier:
         return " ".join(tokens)
 
     def count_matches(self, text: str, patterns: List[str]) -> int:
+        """Conta quantas expressões da lista estão presentes no texto."""
         text = unidecode(text.lower())
         count = 0
         for pattern in patterns:
-            pattern_norm = unidecode(pattern.lower())
-            # Busca por palavras-chave principais do padrão
-            if " " in pattern_norm:
-                words = pattern_norm.split()
-                # Verifica se todas as palavras principais estão presentes
-                if all(word in text for word in words):
-                    count += 1
-            else:
-                if pattern_norm in text:
-                    count += 1
+            words = unidecode(pattern.lower()).split()
+            if all(word in text for word in words):
+                count += 1
         return count
 
-    def has_contradiction(self, original_text: str) -> bool:
+    def has_contradiction(self, text: str) -> bool:
+        """Verifica se há palavras de contradição no texto."""
         contradiction_words = [
             "mas", "porém", "contudo", "entretanto", "no entanto", "apesar"
         ]
-        text = unidecode(original_text.lower())
+        text = unidecode(text.lower())
         return any(word in text for word in contradiction_words)
 
     def matches_neutral_pattern(self, text: str) -> bool:
         """Verifica se o texto corresponde a padrões específicos de
-        neutralidade"""
+        neutralidade."""
         text = unidecode(text.lower())
-        for pattern in self.neutral_patterns:
-            if re.search(pattern, text):
-                return True
-        return False
+        return any(re.search(pattern, text) for pattern in self.neutral_patterns)  # noqa: E501
 
     def analyze_sentiment_strength(self, text: str) -> Dict[str, float]:
-        original_text = text
+        """Executa todas as análises heurísticas e de modelo sobre o texto."""
+        very_pos = self.count_matches(text, self.very_positive)
+        very_neg = self.count_matches(text, self.very_negative)
+        neutral = self.count_matches(text, self.neutral_indicators)
+        weak = self.count_matches(text, self.weakening_words)
+        has_contra = self.has_contradiction(text)
+        is_neutral_pattern = self.matches_neutral_pattern(text)
 
-        very_pos_count = self.count_matches(
-            original_text,
-            self.very_positive
-        )
-
-        very_neg_count = self.count_matches(
-            original_text,
-            self.very_negative
-        )
-
-        neutral_count = self.count_matches(
-            original_text,
-            self.neutral_indicators
-        )
-
-        weakening_count = self.count_matches(
-            original_text,
-            self.weakening_words
-            )
-
-        has_contradiction = self.has_contradiction(original_text)
-        matches_neutral_pattern = self.matches_neutral_pattern(original_text)
-
-        sentence = Sentence(original_text)
+        sentence = Sentence(text)
         self.classifier.predict(sentence)
         flair_label = sentence.labels[0].value.lower()
-        flair_confidence = sentence.labels[0].score
+        flair_conf = sentence.labels[0].score
 
         return {
-            'very_positive': very_pos_count,
-            'very_negative': very_neg_count,
-            'neutral_indicators': neutral_count,
-            'weakening_words': weakening_count,
-            'has_contradiction': has_contradiction,
-            'matches_neutral_pattern': matches_neutral_pattern,
-            'flair_label': flair_label,
-            'flair_confidence': flair_confidence
+            "very_positive": very_pos,
+            "very_negative": very_neg,
+            "neutral_indicators": neutral,
+            "weakening_words": weak,
+            "has_contradiction": has_contra,
+            "matches_neutral_pattern": is_neutral_pattern,
+            "flair_label": flair_label,
+            "flair_confidence": flair_conf,
         }
 
     def classify_sentiment(self, text: str) -> str:
-        analysis = self.analyze_sentiment_strength(text)
+        """Classifica o sentimento com base em heurísticas e modelo."""
+        a = self.analyze_sentiment_strength(text)
 
-        # PRIORIDADE MÁXIMA: Padrões específicos de neutralidade
-        if analysis['matches_neutral_pattern']:
+        if a["matches_neutral_pattern"]:
             return SentimentsEnum.NEUTRAL.value
 
-        # PRIORIDADE ALTA: negatividade evidente
-        if analysis['very_negative'] >= 3:
+        if a["very_negative"] >= 3:
             return SentimentsEnum.NEGATIVE.value
 
-        # Neutro forte por ambivalência clara
-        if analysis['neutral_indicators'] >= 3 or (analysis['has_contradiction'] and analysis['neutral_indicators'] >= 2):  # noqa:E501
+        if a["neutral_indicators"] >= 3 or (
+            a["has_contradiction"] and a["neutral_indicators"] >= 2
+        ):
             return SentimentsEnum.NEUTRAL.value
 
-        # Neutro por conteúdo claramente misto
-        if analysis['very_positive'] >= 2 and analysis['very_negative'] >= 1:
+        if a["very_positive"] >= 2 and a["very_negative"] >= 1:
             return SentimentsEnum.NEUTRAL.value
 
-        # Neutro por palavras enfraquecedoras em contexto ambíguo
-        if analysis['weakening_words'] >= 2 and analysis['has_contradiction']:
+        if a["weakening_words"] >= 2 and a["has_contradiction"]:
             return SentimentsEnum.NEUTRAL.value
 
-        # Regras de polaridade explícita forte
-        if analysis['very_negative'] >= 2 and analysis['very_positive'] == 0:
+        if a["very_negative"] >= 2 and a["very_positive"] == 0:
             return SentimentsEnum.NEGATIVE.value
 
-        if analysis['very_positive'] >= 3:
+        if a["very_positive"] >= 3:
             return SentimentsEnum.POSITIVE.value
 
-        # Neutro se há contradição com baixa confiança do modelo
-        if analysis['has_contradiction'] and analysis['flair_confidence'] < 0.8:  # noqa:E501
+        if a["has_contradiction"] and a["flair_confidence"] < 0.8:
             return SentimentsEnum.NEUTRAL.value
 
-        # Alta confiança do modelo sem contradições
-        if analysis['flair_confidence'] >= 0.9 and not analysis['has_contradiction']:  # noqa:E501
+        if a["flair_confidence"] >= 0.9 and not a["has_contradiction"]:
             return (
                 SentimentsEnum.POSITIVE.value
-                if analysis['flair_label'] == "positive"
+                if a["flair_label"] == "positive"
                 else SentimentsEnum.NEGATIVE.value
             )
 
-        # Heurísticas claras sem ambiguidade
-        if analysis['very_positive'] >= 2 and analysis['very_negative'] == 0 and not analysis['has_contradiction']:  # noqa:E501
+        if a["very_positive"] >= 2 and a["very_negative"] == 0 and not a["has_contradiction"]:  # noqa: E501
             return SentimentsEnum.POSITIVE.value
 
-        if analysis['very_negative'] >= 1 and analysis['very_positive'] == 0 and not analysis['has_contradiction']:  # noqa:E501
+        if a["very_negative"] >= 1 and a["very_positive"] == 0 and not a["has_contradiction"]:  # noqa: E501
             return SentimentsEnum.NEGATIVE.value
 
-        # Positivo claro com uma palavra muito positiva e alta confiança
-        if analysis['very_positive'] >= 1 and analysis['very_negative'] == 0 and analysis['flair_confidence'] >= 0.85 and not analysis['has_contradiction']:  # noqa:E501
+        if (
+            a["very_positive"] >= 1 and
+            a["very_negative"] == 0 and
+            a["flair_confidence"] >= 0.85 and
+            not a["has_contradiction"]
+        ):
             return SentimentsEnum.POSITIVE.value
 
-        # Baixa confiança ou ambiguidade => neutro
-        if analysis['flair_confidence'] < 0.7 or analysis['has_contradiction']:
+        if a["flair_confidence"] < 0.7 or a["has_contradiction"]:
             return SentimentsEnum.NEUTRAL.value
 
-        # fallback com o modelo Flair
         return (
             SentimentsEnum.POSITIVE.value
-            if analysis['flair_label'] == "positive"
+            if a["flair_label"] == "positive"
             else SentimentsEnum.NEGATIVE.value
         )
 
@@ -231,4 +204,5 @@ sentiment_classifier = SentimentClassifier()
 
 
 def classify_sentiment(text: str) -> str:
+    """Função auxiliar que delega ao classificador global."""
     return sentiment_classifier.classify_sentiment(text)
