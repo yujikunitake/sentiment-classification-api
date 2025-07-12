@@ -65,7 +65,7 @@ class ReviewBase(BaseModel):
     evaluation_date: date = Field(
         ...,
         description="Data em que a avaliação feita",
-        json_schema_extra={"example": "2025-07-17"}
+        json_schema_extra={"example": "2024-07-17"}
     )
 
     @field_validator("customer_name")
@@ -173,7 +173,7 @@ class ReviewResponse(BaseModel):
 
     evaluation_date: date = Field(
         ...,
-        json_schema_extra={"example": "2025-07-10"}
+        json_schema_extra={"example": "2024-07-28"}
     )
 
     sentiment: SentimentsEnum = Field(
