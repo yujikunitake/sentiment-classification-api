@@ -1,4 +1,6 @@
 from enum import Enum
+from pydantic import BaseModel, Field
+from datetime import date
 
 
 class SentimentsEnum(str, Enum):
@@ -29,3 +31,27 @@ class SentimentsEnum(str, Enum):
     POSITIVE = "positive"
     NEUTRAL = "neutral"
     NEGATIVE = "negative"
+
+
+class ReviewBase(BaseModel):
+    custmer_name: str = Field(
+        ...,
+        min_length=1,
+        max_length=255,
+        description="Nome do cliente autor da avaliação",
+        examples="Miriam Duarte"
+    )
+
+    review_text: str = Field(
+        ...,
+        min_length=1,
+        max_length=5000,
+        description="Texto completo da avaliação do cliente",
+        example="O atendimento foi rápido, mas poderia ser mais detalhado."
+    )
+
+    evaluation_date: date = Field(
+        ...,
+        description="Data em que a avaliação feita",
+        example="2025-07-17"
+    )
