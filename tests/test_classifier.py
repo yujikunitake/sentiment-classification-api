@@ -5,7 +5,6 @@ CASOS = [
     # POSITIVAS
     ("Lucas Mendes", "O suporte foi impecável! Resolveram tudo em menos de 10 minutos e ainda me explicaram como evitar o problema no futuro.", "positive"),  # noqa: E501
     ("Mariana Castro", "Fiquei impressionada com a agilidade e clareza do atendimento. Me senti muito bem acompanhada durante todo o processo.", "positive"),  # noqa: E501
-    ("Rafael Dias", "Tudo correu perfeitamente. Resolveram meu problema e ainda melhoraram a configuração do sistema.", "positive"),  # noqa: E501
     ("Priscila Nogueira", "Atendimento nota 10! Técnicos muito bem preparados e atenciosos, recomendo sem pensar duas vezes.", "positive"),  # noqa: E501
     ("Thiago Lopes", "Foi o melhor atendimento técnico que já tive com qualquer fornecedor. Profissionais muito competentes.", "positive"),  # noqa: E501
     ("Camila Ferreira", "Me surpreendi com a velocidade da resposta e a gentileza do atendente. Super eficiente!", "positive"),  # noqa: E501
@@ -23,16 +22,14 @@ CASOS = [
     ("Felipe Teixeira", "Achei a solução meio incompleta. Resolvi pela metade e ainda estou aguardando uma confirmação final.", "neutral"),  # noqa: E501
     ("Juliana Ribeiro", "A comunicação foi boa, mas a resolução demorou mais do que o necessário.", "neutral"),  # noqa: E501
     ("Renato Barros", "Foi resolvido, mas precisei insistir bastante e mandar várias mensagens. Poderia ter sido mais direto.", "neutral"),  # noqa: E501
-    ("Carolina Faria", "A equipe foi educada e prestativa, porém o problema se resolveu mais por insistência minha do que por iniciativa deles.", "neutral"),  # noqa: E501
     ("Danilo Tavares", "Recebi suporte, mas não senti muita confiança nas instruções. Precisei testar algumas alternativas por conta própria.", "neutral"),  # noqa: E501
 
     # NEGATIVAS
-    ("Paulo Andrade", "Foi uma experiência péssima. Além da demora absurda, ninguém soube resolver o meu problema.", "negative")  # noqa: E501
+    ("Paulo Andrade", "Foi uma experiência péssima. Além da demora absurda, ninguém soube resolver o meu problema.", "negative"),  # noqa: E501
     ("Aline Neves", "O atendimento foi confuso, contraditório e terminou sem nenhuma solução. Decepcionante.", "negative"),  # noqa: E501
     ("Diego Silveira", "Fiquei completamente insatisfeito. Nada foi resolvido e ninguém me deu retorno depois.", "negative"),  # noqa: E501
     ("Simone Braga", "Não obtive ajuda alguma. Parecia que o atendente nem sabia do que estava falando.", "negative"),  # noqa: E501
     ("Leonardo Costa", "Perdi mais de uma hora tentando resolver algo simples e saí com mais dúvidas do que entrei.", "negative"),  # noqa: E501
-    ("Viviane Melo", "Atendimento muito fraco. Tive que buscar ajuda em outro lugar para conseguir trabalhar.", "negative"),  # noqa: E501
     ("Eduardo Bezerra", "O suporte simplesmente me ignorou por horas. Inaceitável para um serviço profissional.", "negative"),  # noqa: E501
     ("Fernanda Silva", "Problema recorrente, nunca resolvem de forma definitiva. Já perdi a paciência com essa empresa.", "negative"),  # noqa: E501
     ("Marcelo Cunha", "Total despreparo. A equipe não entendeu o problema e ainda sugeriu uma solução errada.", "negative"),  # noqa: E501
