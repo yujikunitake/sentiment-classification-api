@@ -53,19 +53,23 @@ DATABASE_URL=postgresql://usuario:senha@localhost:5432/sentimentdb
 ```
 Ajuste a URL conforme seu ambiente local.
 
-### 5) Crie as tabelas no banco
+### 5) Crie o banco de dados
+
+Crie um database chamado sentimentdb no PostrgreSQL
+
+### 6) Crie as tabelas no banco
 
 ```bash
 python create_tables.py
 ```
 
-### 6) Rode a aplicação
+### 7) Rode a aplicação
 
 ```bash
 uvicorn app.main:app --reload
 ```
 
-### 7) Acesse o Swagger
+### 8) Acesse o Swagger
 
 Acesse: http://127.0.0.1:8000/docs
 
